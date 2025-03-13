@@ -20,7 +20,7 @@ ratings = pd.read_csv("data/ratings.csv")
 train_data = pd.merge(ratings, movies, on="movieId")
 print(train_data)
 
-Arch = ar.Arch(arch_i=[20, 15], arch_z=[3], arch_c=[])
+Arch = ar.Arch(arch_i=[6, 15], arch_z=[3], arch_c=[])
 
 agent = ao.Agent(Arch, notes="")
 
@@ -32,15 +32,22 @@ ratings_train = []
 test_data_list = []
 ratings_test = []
 
+def encode_genre(genre):
+    binary = [0,0,0,0,0, 0]
+    genres = ["Drama", "Comedy", "Action", "romance", "documentary", "Thriller"]
+    try:
+        indx = genres.index(genre)
+        binary[indx] = 1
+    except Exception as e:
+        pass
+    print("encoding: ", genre, "as", binary)
+    return binary
+
 for idx, row in train_data_sample.iterrows():
     genres_list = row['genres'].split('|')
     primary_genre = genres_list[0]
 
-    _, bucket_genre, bucket_id, bucket_encoding = em.auto_sort(
-        cache, primary_genre, max_distance, Genre,
-        type_of_distance_calc="COSINE SIMILARITY",
-        amount_of_binary_digits=20
-    )
+    genre_encoding = encode_genre(primary_genre)
 
 
     rating = [int(bit) for bit in format(int(row['rating']), "03b")]
@@ -48,7 +55,7 @@ for idx, row in train_data_sample.iterrows():
     uid = row["userId"]
     userId = list(format(int(uid), "015b")) 
     
-    train_row = userId + list(bucket_encoding)
+    train_row = userId + list(genre_encoding)
     train_data_list.append(train_row)
     ratings_train.append(rating)
 
@@ -59,16 +66,12 @@ for idx, row in test_data_sample.iterrows():
     genres_list = row['genres'].split('|')
     primary_genre = genres_list[0]
     
-    _, bucket_genre, bucket_id, bucket_encoding = em.auto_sort(
-        cache, primary_genre, max_distance, Genre,
-        type_of_distance_calc="COSINE SIMILARITY",
-        amount_of_binary_digits=20
-    )
+    genre_encoding = encode_genre(primary_genre)
 
     uid = row["userId"]
     userId = list(format(int(uid), "015b")) 
     
-    test_row = userId + list(bucket_encoding)
+    test_row = userId + list(genre_encoding)
     test_data_list.append(test_row)
     ratings_test.append(row['rating'])
 
